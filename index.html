@@ -19,7 +19,7 @@
 
   <div class="max-w-6xl mx-auto space-y-6">
     
-    <!-- Top Header & Controls -->
+    <!-- Header & Refresh Controls -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/90 backdrop-blur p-4 rounded-2xl border border-slate-700 shadow-xl">
       <div>
         <h1 class="text-2xl font-black tracking-wide text-white">MTR Commute Live</h1>
@@ -54,7 +54,7 @@
           <span class="text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50 px-3 py-1 rounded-full">Outbound Morning</span>
         </div>
 
-        <!-- Yuen Long Station -> Tuen Mun -->
+        <!-- MTR: Yuen Long -> Tuen Mun -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">元朗 Yuen Long (TML)</h3>
@@ -65,11 +65,11 @@
           </div>
         </div>
 
-        <!-- Tin Shui Wai LRT -> Hospital -->
+        <!-- Light Rail: Tin Shui Wai -> Hospital -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">天水圍 Tin Shui Wai (LRT)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院 Direction</span>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院 (705 / 706 / 751)</span>
           </div>
           <div id="shangban-lrt" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
@@ -87,7 +87,7 @@
           <span class="text-xs font-semibold bg-sky-950/80 text-sky-300 border border-sky-700/50 px-3 py-1 rounded-full">Inbound Evening</span>
         </div>
 
-        <!-- Yuen Long Station -> Wu Kai Sha -->
+        <!-- MTR: Yuen Long -> Wu Kai Sha -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">元朗 Yuen Long (TML)</h3>
@@ -98,11 +98,11 @@
           </div>
         </div>
 
-        <!-- Tin Shui Wai LRT -> Return Routes -->
+        <!-- Light Rail: Back to Yuen Long -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">天水圍 Tin Shui Wai (LRT)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">Return Routes</span>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 元朗 (610 / 614 / 615 / 761P)</span>
           </div>
           <div id="xiaban-lrt" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
@@ -172,8 +172,8 @@
 
     function renderMTRSection(data) {
       const schedule = data?.data?.["TML-YUL"];
-      const downTrains = schedule?.DOWN || []; // Tuen Mun bound (上班)
-      const upTrains = schedule?.UP || [];     // Wu Kai Sha bound (下班)
+      const downTrains = schedule?.DOWN || []; // To Tuen Mun (上班)
+      const upTrains = schedule?.UP || [];     // To Wu Kai Sha / Back to Yuen Long area (下班)
 
       document.getElementById("shangban-mtr").innerHTML = createMTRListHTML(downTrains);
       document.getElementById("xiaban-mtr").innerHTML = createMTRListHTML(upTrains);
@@ -216,8 +216,14 @@
         });
       });
 
+      // 上班: Routes heading toward Tin Shui Wai Hospital area
       const shangbanRoutes = allRoutes.filter(r => ["705", "706", "751"].includes(r.route_no));
-      const xiabanRoutes = allRoutes.filter(r => ["705", "706", "751P", "761P"].includes(r.route_no));
+      
+      // 下班: Routes heading back toward Yuen Long direction
+      const xiabanRoutes = allRoutes.filter(r => 
+        ["610", "614", "615", "761P"].includes(r.route_no) || 
+        (r.dest_ch && r.dest_ch.includes("元朗"))
+      );
 
       document.getElementById("shangban-lrt").innerHTML = createLRTListHTML(shangbanRoutes.length ? shangbanRoutes : allRoutes);
       document.getElementById("xiaban-lrt").innerHTML = createLRTListHTML(xiabanRoutes.length ? xiabanRoutes : allRoutes);
@@ -228,12 +234,13 @@
         return `<div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-400 border border-slate-800">No scheduled Light Rail</div>`;
       }
 
-      return routes.slice(0, 3).map(r => `
+      return routes.slice(0, 4).map(r => `
         <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-colors">
           <div class="flex items-center gap-3">
             <span class="text-xs font-black bg-slate-700 text-slate-100 px-2.5 py-1 rounded-lg">
               ${r.route_no}
             </span>
+            <span class="text-xs text-slate-300 font-medium">${r.dest_ch || r.dest_en}</span>
             <span class="text-xs text-slate-400">月台 ${r.platform_id}</span>
           </div>
           <span class="text-sm font-semibold text-sky-400 font-mono">
