@@ -134,7 +134,8 @@
       "WKS": "烏溪沙 Wu Kai Sha",
       "HUH": "紅磡 Hung Hom",
       "KSR": "錦上路 Kam Sheung Road",
-      "YUL": "元朗 Yuen Long"
+      "YUL": "元朗 Yuen Long",
+      "TIS": "天水圍 Tin Shui Wai"
     };
 
     let timerSeconds = 20;
@@ -146,19 +147,27 @@
       startTimer();
     });
 
-    async function fetchJson(url) {
+    // Helper: Fetch JSON with CORS proxy fallback if blocked locally
+    async function fetchJsonWithFallback(url) {
       try {
         const res = await fetch(url);
-        if (!res.ok) return null;
-        return await res.json();
+        if (res.ok) return await res.json();
       } catch (e) {
-        return null;
+        console.warn("Direct fetch failed, trying proxy:", url);
       }
+      try {
+        const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+        const res = await fetch(proxyUrl);
+        if (res.ok) return await res.json();
+      } catch (e) {
+        console.error("Proxy fetch failed:", url);
+      }
+      return null;
     }
 
     async function fetchLrtWithFallback(urls) {
       for (const url of urls) {
-        const data = await fetchJson(url);
+        const data = await fetchJsonWithFallback(url);
         if (data && (data.platform_list || data.platform)) {
           return data;
         }
@@ -171,8 +180,8 @@
       refreshIcon.classList.add("spin-animation");
 
       const [mtrYulData, mtrTisData, lrtTswData, lrtHospData] = await Promise.all([
-        fetchJson(MTR_YUL_API),
-        fetchJson(MTR_TIS_API),
+        fetchJsonWithFallback(MTR_YUL_API),
+        fetchJsonWithFallback(MTR_TIS_API),
         fetchLrtWithFallback(LRT_TSW_URLS),
         fetchLrtWithFallback(LRT_HOSP_URLS)
       ]);
@@ -184,15 +193,23 @@
     }
 
     function renderMTR(yulData, tisData) {
-      // Yuen Long station -> DOWN array contains trains bound for Tuen Mun (TUM)
-      const yulTrainsRaw = yulData?.data?.["TML-YUL"] || {};
-      let shangbanTrains = yulTrainsRaw.DOWN || [];
-      shangbanTrains = shangbanTrains.filter(t => t.dest === "TUM" || t.dest_ch === "屯門");
+      // Yuen Long station (TML): DOWN direction goes towards Tuen Mun (TUM)
+      const yulObj = yulData?.data?.["TML-YUL"] || {};
+      let shangbanTrains = yulObj.DOWN || [];
+      
+      // Fallback: if DOWN is empty, look through all schedules for TUM destination
+      if (shangbanTrains.length === 0 && (yulObj.UP || []).length > 0) {
+        shangbanTrains = (yulObj.UP || []).filter(t => t.dest === "TUM" || t.dest_ch === "屯門");
+      }
 
-      // Tin Shui Wai station -> UP array contains trains bound for Wu Kai Sha (WKS) / Hung Hom
-      const tisTrainsRaw = tisData?.data?.["TML-TIS"] || {};
-      let xiabanTrains = tisTrainsRaw.UP || [];
-      xiabanTrains = xiabanTrains.filter(t => t.dest === "WKS" || t.dest_ch === "烏溪沙");
+      // Tin Shui Wai station (TML): UP direction goes towards Wu Kai Sha (WKS)
+      const tisObj = tisData?.data?.["TML-TIS"] || {};
+      let xiabanTrains = tisObj.UP || [];
+
+      // Fallback: if UP is empty, look through DOWN for WKS destination
+      if (xiabanTrains.length === 0 && (tisObj.DOWN || []).length > 0) {
+        xiabanTrains = (tisObj.DOWN || []).filter(t => t.dest === "WKS" || t.dest_ch === "烏溪沙");
+      }
 
       document.getElementById("shangban-mtr").innerHTML = renderMTRRows(shangbanTrains);
       document.getElementById("xiaban-mtr").innerHTML = renderMTRRows(xiabanTrains);
@@ -204,7 +221,7 @@
       }
 
       return trainList.slice(0, 4).map(train => {
-        const destName = DESTINATION_MAP[train.dest] || train.dest;
+        const destName = DESTINATION_MAP[train.dest] || train.dest_ch || train.dest;
         const isArriving = train.ttnt === "0" || train.ttnt === "1";
         const timeText = isArriving ? "即將到達 Arriving" : `${train.ttnt} mins`;
         const isUrgent = parseInt(train.ttnt) <= 3 || isArriving;
@@ -213,7 +230,7 @@
           <div class="flex justify-between items-center bg-slate-900/90 px-3.5 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
             <div class="flex items-center gap-2.5">
               <span class="text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-md">
-                月台 ${train.plat}
+                月台 ${train.plat || '1'}
               </span>
               <span class="text-xs font-medium text-slate-200">${destName}</span>
             </div>
