@@ -54,22 +54,22 @@
           <span class="text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50 px-3 py-1 rounded-full">Outbound Morning</span>
         </div>
 
-        <!-- MTR: Yuen Long -> Tuen Mun -->
+        <!-- MTR: Yuen Long -> Wu Kai Sha -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">元朗 Yuen Long (TML)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 屯門 Direction</span>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 烏溪沙 Direction</span>
           </div>
           <div id="shangban-mtr" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching train arrivals...</div>
           </div>
         </div>
 
-        <!-- Light Rail: Tin Shui Wai -> Hospital -->
+        <!-- Light Rail: Back to Yuen Long -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">天水圍 Tin Shui Wai (LRT)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院 (705 / 706 / 751)</span>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 元朗 (610 / 614 / 615 / 761P)</span>
           </div>
           <div id="shangban-lrt" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
@@ -87,22 +87,22 @@
           <span class="text-xs font-semibold bg-sky-950/80 text-sky-300 border border-sky-700/50 px-3 py-1 rounded-full">Inbound Evening</span>
         </div>
 
-        <!-- MTR: Yuen Long -> Wu Kai Sha -->
+        <!-- MTR: Yuen Long -> Tuen Mun -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">元朗 Yuen Long (TML)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 烏溪沙 Direction</span>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 屯門 Direction</span>
           </div>
           <div id="xiaban-mtr" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching train arrivals...</div>
           </div>
         </div>
 
-        <!-- Light Rail: Back to Yuen Long -->
+        <!-- Light Rail: Tin Shui Wai -> Hospital -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
             <h3 class="text-sm font-bold text-slate-200">天水圍 Tin Shui Wai (LRT)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 元朗 (610 / 614 / 615 / 761P)</span>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院 (705 / 706 / 751)</span>
           </div>
           <div id="xiaban-lrt" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
@@ -172,11 +172,12 @@
 
     function renderMTRSection(data) {
       const schedule = data?.data?.["TML-YUL"];
-      const downTrains = schedule?.DOWN || []; // To Tuen Mun (上班)
-      const upTrains = schedule?.UP || [];     // To Wu Kai Sha / Back to Yuen Long area (下班)
+      const downTrains = schedule?.DOWN || []; // To Tuen Mun
+      const upTrains = schedule?.UP || [];     // To Wu Kai Sha
 
-      document.getElementById("shangban-mtr").innerHTML = createMTRListHTML(downTrains);
-      document.getElementById("xiaban-mtr").innerHTML = createMTRListHTML(upTrains);
+      // Swapped: UP (Wu Kai Sha) for 上班, DOWN (Tuen Mun) for 下班
+      document.getElementById("shangban-mtr").innerHTML = createMTRListHTML(upTrains);
+      document.getElementById("xiaban-mtr").innerHTML = createMTRListHTML(downTrains);
     }
 
     function createMTRListHTML(trainList) {
@@ -216,14 +217,14 @@
         });
       });
 
-      // 上班: Routes heading toward Tin Shui Wai Hospital area
-      const shangbanRoutes = allRoutes.filter(r => ["705", "706", "751"].includes(r.route_no));
-      
-      // 下班: Routes heading back toward Yuen Long direction
-      const xiabanRoutes = allRoutes.filter(r => 
+      // Swapped: Routes heading back toward Yuen Long direction for 上班
+      const shangbanRoutes = allRoutes.filter(r => 
         ["610", "614", "615", "761P"].includes(r.route_no) || 
         (r.dest_ch && r.dest_ch.includes("元朗"))
       );
+
+      // Swapped: Routes heading toward Tin Shui Wai Hospital area for 下班
+      const xiabanRoutes = allRoutes.filter(r => ["705", "706", "751"].includes(r.route_no));
 
       document.getElementById("shangban-lrt").innerHTML = createLRTListHTML(shangbanRoutes.length ? shangbanRoutes : allRoutes);
       document.getElementById("xiaban-lrt").innerHTML = createLRTListHTML(xiabanRoutes.length ? xiabanRoutes : allRoutes);
