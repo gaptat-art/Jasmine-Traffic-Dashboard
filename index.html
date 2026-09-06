@@ -68,11 +68,11 @@
           </div>
         </div>
 
-        <!-- LRT Tin Shui Wai Stop (Filtered for Route 706) -->
+        <!-- LRT Tin Shui Wai Stop (Filtered for Routes 706 & 751) -->
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍站 Tin Shui Wai (LRT Stop 430)</span>
-            <span class="text-slate-400 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded font-bold">706 循環線 (Shorter Loop)</span>
+            <span class="text-slate-400 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded font-bold">706 / 751 綫 (Shorter Routes)</span>
           </div>
           <div id="shangban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -231,16 +231,16 @@
     }
 
     function renderLRT(tswData, hospData) {
-      // Filter Morning Commute (上班) specifically for Route 706
-      const shangbanRoutes = parseLRT(tswData, "706");
-      // Filter Evening Commute (下班) specifically for Route 705
-      const xiabanRoutes = parseLRT(hospData, "705");
+      // Morning Commute: Filter for Route 706 AND Route 751
+      const shangbanRoutes = parseLRT(tswData, ["706", "751"]);
+      // Evening Commute: Filter for Route 705
+      const xiabanRoutes = parseLRT(hospData, ["705"]);
 
-      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, "706");
+      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, "706 / 751");
       document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes, "705");
     }
 
-    function parseLRT(apiData, targetRouteNo) {
+    function parseLRT(apiData, allowedRoutes) {
       if (!apiData) return [];
       const platforms = apiData.platform_list || apiData.platform || [];
       if (!Array.isArray(platforms)) return [];
@@ -254,8 +254,8 @@
           list.forEach(r => {
             const routeNo = String(r.route_no || r.route_number || '');
             
-            // If targetRouteNo is specified, only retain matching routes
-            if (!targetRouteNo || routeNo === targetRouteNo) {
+            // Check if current route is in the allowed routes array
+            if (!allowedRoutes || allowedRoutes.includes(routeNo)) {
               routes.push({
                 platform: pId,
                 routeNo: routeNo || 'N/A',
@@ -269,9 +269,9 @@
       return routes;
     }
 
-    function renderLRTRows(routes, routeNo) {
+    function renderLRTRows(routes, routeLabel) {
       if (!routes || routes.length === 0) {
-        return `<div class="p-2.5 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800">No active Route ${routeNo} departures currently</div>`;
+        return `<div class="p-2.5 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800">No active Route ${routeLabel} departures currently</div>`;
       }
 
       return routes.slice(0, 4).map(r => `
