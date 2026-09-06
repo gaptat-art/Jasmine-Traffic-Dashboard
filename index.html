@@ -68,8 +68,8 @@
         <!-- Light Rail: Tin Shui Wai -> Hospital Direction -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
-            <h3 class="text-sm font-bold text-slate-200">天水圍站 Tin Shui Wai Stop (LRT)</h3>
-            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院 Direction</span>
+            <h3 class="text-sm font-bold text-slate-200">天水圍站 Tin Shui Wai Stop (LRT 430)</h3>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院/頌富 Direction</span>
           </div>
           <div id="shangban-lrt" class="space-y-2">
             <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
@@ -87,10 +87,10 @@
           <span class="text-xs font-semibold bg-sky-950/80 text-sky-300 border border-sky-700/50 px-3 py-1 rounded-full">Inbound Evening</span>
         </div>
 
-        <!-- Light Rail: Hospital -> Tin Shui Wai Station Direction -->
+        <!-- Light Rail: Chung Fu (Hospital Stop) -> Tin Shui Wai Station Direction -->
         <div class="space-y-2.5">
           <div class="flex justify-between items-center">
-            <h3 class="text-sm font-bold text-slate-200">天水圍醫院 Tin Shui Wai Hospital (LRT)</h3>
+            <h3 class="text-sm font-bold text-slate-200">頌富 Chung Fu / 醫院 Hospital (LRT 468)</h3>
             <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍站 Direction</span>
           </div>
           <div id="xiaban-lrt" class="space-y-2">
@@ -118,9 +118,9 @@
     const MTR_YUL_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=YUL";
     const MTR_TIS_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=TIS";
     
-    // LRT Station IDs: 430 = Tin Shui Wai, 435 = Tin Shui Wai Hospital / Tin Wai
+    // Valid Light Rail Stop IDs: 430 = Tin Shui Wai Stop, 468 = Chung Fu Stop (Closest Light Rail to Tin Shui Wai Hospital)
     const LRT_TSW_API = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule.php?station_id=430";
-    const LRT_HOSP_API = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule.php?station_id=435";
+    const LRT_HOSP_API = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule.php?station_id=468";
 
     const DESTINATION_NAMES = {
       "TUM": "屯門 Tuen Mun",
@@ -142,7 +142,7 @@
     async function fetchApi(url) {
       try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error("API error");
+        if (!res.ok) throw new Error("API network error");
         return await res.json();
       } catch (err) {
         console.error("Fetch Error:", url, err);
@@ -206,48 +206,53 @@
     }
 
     function renderLRTSection(tswData, hospData) {
-      // Extract Tin Shui Wai station routes (上班)
-      const tswPlatforms = tswData?.platform_list || [];
-      let shangbanRoutes = [];
-      tswPlatforms.forEach(p => {
-        (p.route_list || []).forEach(r => {
-          shangbanRoutes.push({ ...r, platform_id: p.platform_id });
+      const shangbanRoutes = parseLRTData(tswData);
+      const xiabanRoutes = parseLRTData(hospData);
+
+      document.getElementById("shangban-lrt").innerHTML = createLRTListHTML(shangbanRoutes);
+      document.getElementById("xiaban-lrt").innerHTML = createLRTListHTML(xiabanRoutes);
+    }
+
+    function parseLRTData(apiData) {
+      if (!apiData || !apiData.platform_list || !Array.isArray(apiData.platform_list)) {
+        return [];
+      }
+
+      let extractedRoutes = [];
+      apiData.platform_list.forEach(platform => {
+        const platformId = platform.platform_id;
+        const routeList = platform.route_list || [];
+
+        routeList.forEach(route => {
+          extractedRoutes.push({
+            platform_id: platformId,
+            route_no: route.route_no || 'N/A',
+            dest_ch: route.dest_ch || route.dest_en || 'Special',
+            dest_en: route.dest_en || '',
+            time_ch: route.time_ch || route.time_en || 'Arriving'
+          });
         });
       });
 
-      // Extract Hospital station routes (下班)
-      const hospPlatforms = hospData?.platform_list || [];
-      let xiabanRoutes = [];
-      hospPlatforms.forEach(p => {
-        (p.route_list || []).forEach(r => {
-          xiabanRoutes.push({ ...r, platform_id: p.platform_id });
-        });
-      });
-
-      // Filter routes toward hospital (705, 706, 751)
-      const filteredShangban = shangbanRoutes.filter(r => ["705", "706", "751"].includes(r.route_no));
-      const filteredXiaban = xiabanRoutes.filter(r => ["705", "706", "751"].includes(r.route_no));
-
-      document.getElementById("shangban-lrt").innerHTML = createLRTListHTML(filteredShangban.length ? filteredShangban : shangbanRoutes);
-      document.getElementById("xiaban-lrt").innerHTML = createLRTListHTML(filteredXiaban.length ? filteredXiaban : xiabanRoutes);
+      return extractedRoutes;
     }
 
     function createLRTListHTML(routes) {
       if (!routes || routes.length === 0) {
-        return `<div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-400 border border-slate-800">No scheduled Light Rail</div>`;
+        return `<div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-400 border border-slate-800">No active Light Rail schedule</div>`;
       }
 
-      return routes.slice(0, 4).map(r => `
+      return routes.slice(0, 5).map(r => `
         <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-colors">
           <div class="flex items-center gap-3">
-            <span class="text-xs font-black bg-slate-700 text-slate-100 px-2.5 py-1 rounded-lg">
+            <span class="text-xs font-black bg-slate-700 text-slate-100 px-2.5 py-1 rounded-lg min-w-[45px] text-center">
               ${r.route_no}
             </span>
-            <span class="text-xs text-slate-300 font-medium">${r.dest_ch || r.dest_en}</span>
-            <span class="text-xs text-slate-400">月台 ${r.platform_id}</span>
+            <span class="text-xs text-slate-300 font-medium">${r.dest_ch}</span>
+            <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">月台 ${r.platform_id}</span>
           </div>
-          <span class="text-sm font-semibold text-sky-400 font-mono">
-            ${r.time_ch || r.time_en}
+          <span class="text-xs font-semibold text-sky-400 font-mono">
+            ${r.time_ch}
           </span>
         </div>
       `).join('');
