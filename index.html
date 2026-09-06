@@ -57,11 +57,11 @@
           <span class="text-[11px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2.5 py-0.5 rounded-full">Outbound</span>
         </div>
 
-        <!-- MTR Yuen Long -->
+        <!-- MTR Yuen Long -> Tuen Mun Direction -->
         <div class="space-y-2">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">元朗 Yuen Long (TML)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">往 屯門 Direction</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 屯門 Tuen Mun</span>
           </div>
           <div id="shangban-mtr" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading train schedules...</div>
@@ -72,7 +72,7 @@
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍站 Tin Shui Wai (LRT Stop 430)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">往 醫院/天逸 Direction</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 醫院/天逸 Direction</span>
           </div>
           <div id="shangban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -94,18 +94,18 @@
         <div class="space-y-2">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">頌富 Chung Fu / 醫院 (LRT Stop 468)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">往 天水圍站 Direction</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 天水圍站 Direction</span>
           </div>
           <div id="xiaban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
           </div>
         </div>
 
-        <!-- MTR Tin Shui Wai -->
+        <!-- MTR Tin Shui Wai -> Wu Kai Sha Direction -->
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍 Tin Shui Wai (TML)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">往 元朗/烏溪沙 Direction</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 烏溪沙 Wu Kai Sha</span>
           </div>
           <div id="xiaban-mtr" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading train schedules...</div>
@@ -120,7 +120,6 @@
     const MTR_YUL_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=YUL";
     const MTR_TIS_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=TIS";
     
-    // Light Rail primary & fallback API endpoints
     const LRT_TSW_URLS = [
       "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430",
       "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430"
@@ -185,8 +184,15 @@
     }
 
     function renderMTR(yulData, tisData) {
-      const shangbanTrains = yulData?.data?.["TML-YUL"]?.DOWN || [];
-      const xiabanTrains = tisData?.data?.["TML-TIS"]?.UP || [];
+      // Yuen Long station -> DOWN array contains trains bound for Tuen Mun (TUM)
+      const yulTrainsRaw = yulData?.data?.["TML-YUL"] || {};
+      let shangbanTrains = yulTrainsRaw.DOWN || [];
+      shangbanTrains = shangbanTrains.filter(t => t.dest === "TUM" || t.dest_ch === "屯門");
+
+      // Tin Shui Wai station -> UP array contains trains bound for Wu Kai Sha (WKS) / Hung Hom
+      const tisTrainsRaw = tisData?.data?.["TML-TIS"] || {};
+      let xiabanTrains = tisTrainsRaw.UP || [];
+      xiabanTrains = xiabanTrains.filter(t => t.dest === "WKS" || t.dest_ch === "烏溪沙");
 
       document.getElementById("shangban-mtr").innerHTML = renderMTRRows(shangbanTrains);
       document.getElementById("xiaban-mtr").innerHTML = renderMTRRows(xiabanTrains);
@@ -194,10 +200,10 @@
 
     function renderMTRRows(trainList) {
       if (!trainList || trainList.length === 0) {
-        return `<div class="p-2.5 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800">No active train departures</div>`;
+        return `<div class="p-2.5 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800">No scheduled departures</div>`;
       }
 
-      return trainList.map(train => {
+      return trainList.slice(0, 4).map(train => {
         const destName = DESTINATION_MAP[train.dest] || train.dest;
         const isArriving = train.ttnt === "0" || train.ttnt === "1";
         const timeText = isArriving ? "即將到達 Arriving" : `${train.ttnt} mins`;
