@@ -75,10 +75,10 @@
         </div>
 
         <div class="space-y-3">
-          <!-- LRT Chung Fu / Hospital Box -->
+          <!-- LRT Tin Shui Box (Stop 460) -->
           <div class="border-2 border-black p-3 bg-white">
             <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
-              <span class="text-xl sm:text-2xl font-black text-black">頌富 / 醫院</span>
+              <span class="text-xl sm:text-2xl font-black text-black">天瑞</span>
               <span class="text-sm font-bold text-black">705 循環綫</span>
             </div>
             <div id="xiaban-lrt" class="divide-y border-dashed border-gray-400">
@@ -110,9 +110,10 @@
       "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430",
       "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430"
     ];
-    const LRT_HOSP_URLS = [
-      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=468",
-      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=468"
+    // LRT Station ID 460 for Tin Shui (天瑞)
+    const LRT_TIN_SHUI_URLS = [
+      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=460",
+      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=460"
     ];
 
     const DESTINATION_MAP = {
@@ -170,15 +171,15 @@
     }
 
     async function loadDashboard() {
-      const [mtrYulData, mtrTisData, lrtTswData, lrtHospData] = await Promise.all([
+      const [mtrYulData, mtrTisData, lrtTswData, lrtTinShuiData] = await Promise.all([
         fetchJsonWithFallback(MTR_YUL_API),
         fetchJsonWithFallback(MTR_TIS_API),
         fetchLrtWithFallback(LRT_TSW_URLS),
-        fetchLrtWithFallback(LRT_HOSP_URLS)
+        fetchLrtWithFallback(LRT_TIN_SHUI_URLS)
       ]);
 
       renderMTR(mtrYulData, mtrTisData);
-      renderLRT(lrtTswData, lrtHospData);
+      renderLRT(lrtTswData, lrtTinShuiData);
     }
 
     function renderMTR(yulData, tisData) {
@@ -214,7 +215,7 @@
       }).join('');
     }
 
-    function renderLRT(tswData, hospData) {
+    function renderLRT(tswData, tinShuiData) {
       // Morning Commute: Route 706 OR Route 751 bound for 天逸
       const shangbanRoutes = parseLRT(tswData, (routeNo, dest) => {
         if (routeNo === "706") return true;
@@ -222,8 +223,8 @@
         return false;
       });
 
-      // Evening Commute: Route 705
-      const xiabanRoutes = parseLRT(hospData, (routeNo) => routeNo === "705");
+      // Evening Commute: Route 705 from Tin Shui Stop
+      const xiabanRoutes = parseLRT(tinShuiData, (routeNo) => routeNo === "705");
 
       document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes);
       document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes);
