@@ -53,7 +53,7 @@
             </div>
           </div>
 
-          <!-- Combined LRT Tin Shui Wai Box -->
+          <!-- Combined LRT Tin Shui Wai Box (Shows up to 2 x 706 and 2 x 751) -->
           <div class="border-2 border-black p-3 bg-white">
             <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
               <span class="text-xl sm:text-2xl font-black text-black">輕鐵天水圍站</span>
@@ -110,7 +110,6 @@
       "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430",
       "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430"
     ];
-    // LRT Station ID 460 for Tin Shui (天瑞)
     const LRT_TIN_SHUI_URLS = [
       "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=460",
       "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=460"
@@ -216,18 +215,20 @@
     }
 
     function renderLRT(tswData, tinShuiData) {
-      // Combined filtering for Morning Commute (Route 706 OR Route 751 bound for 天逸)
-      const shangbanRoutes = parseLRT(tswData, (routeNo, dest) => {
-        if (routeNo === "706") return true;
-        if (routeNo === "751" && dest.includes("天逸")) return true;
-        return false;
-      });
+      // Get max 2 departures for Route 706
+      const routes706 = parseLRT(tswData, (routeNo) => routeNo === "706").slice(0, 2);
 
-      // Filter departures for Evening Route 705 from Tin Shui Stop
-      const xiabanRoutes = parseLRT(tinShuiData, (routeNo) => routeNo === "705");
+      // Get max 2 departures for Route 751 (bound for 天逸)
+      const routes751 = parseLRT(tswData, (routeNo, dest) => routeNo === "751" && dest.includes("天逸")).slice(0, 2);
 
-      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, 3);
-      document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes, 3);
+      // Combine both lists into legend 1
+      const shangbanRoutes = [...routes706, ...routes751];
+
+      // Evening Route 705
+      const xiabanRoutes = parseLRT(tinShuiData, (routeNo) => routeNo === "705").slice(0, 3);
+
+      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes);
+      document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes);
     }
 
     function parseLRT(apiData, filterFn) {
@@ -259,12 +260,12 @@
       return routes;
     }
 
-    function renderLRTRows(routes, limit = 3) {
+    function renderLRTRows(routes) {
       if (!routes || routes.length === 0) {
         return `<div class="py-2 text-sm font-bold text-gray-500">暫無班次資料</div>`;
       }
 
-      return routes.slice(0, limit).map(r => `
+      return routes.map(r => `
         <div class="flex justify-between items-center py-2 border-b border-dashed border-gray-400 last:border-b-0 text-lg font-black text-black">
           <div>
             <span class="bg-black text-white px-1.5 py-0.5 text-sm mr-1.5 font-bold">${r.routeNo}</span>
