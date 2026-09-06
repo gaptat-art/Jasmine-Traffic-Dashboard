@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MTR & Light Rail Live Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin-animation {
+      animation: spin 0.8s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 sm:p-6 font-sans">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+    
+    <!-- Top Header & Controls -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/90 backdrop-blur p-4 rounded-2xl border border-slate-700 shadow-xl">
+      <div>
+        <h1 class="text-2xl font-black tracking-wide text-white">MTR Commute Live</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Yuen Long Station (TML) & Tin Shui Wai (Light Rail)</p>
+      </div>
+
+      <div class="flex items-center gap-5 w-full sm:w-auto justify-between">
+        <div class="text-right">
+          <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-bold">Auto Refresh</span>
+          <span id="countdown" class="text-lg font-mono font-bold text-amber-400">20s</span>
+        </div>
+        
+        <button id="refresh-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-md shadow-amber-500/10">
+          <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Refresh Now
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Legends Grid -->
+    <main class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Legend: 上班 -->
+      <section class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-5 shadow-2xl backdrop-blur-md">
+        <div class="flex justify-between items-center border-b border-slate-700/80 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+            <h2 class="text-2xl font-black text-emerald-400 tracking-tight">上班</h2>
+          </div>
+          <span class="text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50 px-3 py-1 rounded-full">Outbound Morning</span>
+        </div>
+
+        <!-- Yuen Long Station -> Tuen Mun -->
+        <div class="space-y-2.5">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-200">元朗 Yuen Long (TML)</h3>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 屯門 Direction</span>
+          </div>
+          <div id="shangban-mtr" class="space-y-2">
+            <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching train arrivals...</div>
+          </div>
+        </div>
+
+        <!-- Tin Shui Wai LRT -> Hospital -->
+        <div class="space-y-2.5">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-200">天水圍 Tin Shui Wai (LRT)</h3>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 天水圍醫院 Direction</span>
+          </div>
+          <div id="shangban-lrt" class="space-y-2">
+            <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Legend: 下班 -->
+      <section class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-5 shadow-2xl backdrop-blur-md">
+        <div class="flex justify-between items-center border-b border-slate-700/80 pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full bg-sky-400 animate-ping"></span>
+            <h2 class="text-2xl font-black text-sky-400 tracking-tight">下班</h2>
+          </div>
+          <span class="text-xs font-semibold bg-sky-950/80 text-sky-300 border border-sky-700/50 px-3 py-1 rounded-full">Inbound Evening</span>
+        </div>
+
+        <!-- Yuen Long Station -> Wu Kai Sha -->
+        <div class="space-y-2.5">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-200">元朗 Yuen Long (TML)</h3>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">往 烏溪沙 Direction</span>
+          </div>
+          <div id="xiaban-mtr" class="space-y-2">
+            <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching train arrivals...</div>
+          </div>
+        </div>
+
+        <!-- Tin Shui Wai LRT -> Return Routes -->
+        <div class="space-y-2.5">
+          <div class="flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-200">天水圍 Tin Shui Wai (LRT)</h3>
+            <span class="text-xs bg-slate-700/60 text-slate-300 px-2 py-0.5 rounded font-medium">Return Routes</span>
+          </div>
+          <div id="xiaban-lrt" class="space-y-2">
+            <div class="p-4 bg-slate-900/50 rounded-xl animate-pulse text-xs text-slate-500 border border-slate-800">Fetching Light Rail arrivals...</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const MTR_API_URL = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=YUL";
+    const LRT_API_URL = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule.php?station_id=430";
+
+    const DESTINATION_NAMES = {
+      "TUM": "屯門 Tuen Mun",
+      "WKS": "烏溪沙 Wu Kai Sha",
+      "HUH": "紅磡 Hung Hom",
+      "KSR": "錦上路 Kam Sheung Road"
+    };
+
+    let timerSeconds = 20;
+    let countdownInterval = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("refresh-btn").addEventListener("click", manualRefresh);
+      loadDashboard();
+      startTimer();
+    });
+
+    async function fetchMTRData() {
+      try {
+        const response = await fetch(MTR_API_URL);
+        if (!response.ok) throw new Error("MTR API error");
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching MTR data:", error);
+        return null;
+      }
+    }
+
+    async function fetchLRTData() {
+      try {
+        const response = await fetch(LRT_API_URL);
+        if (!response.ok) throw new Error("LRT API error");
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching LRT data:", error);
+        return null;
+      }
+    }
+
+    async function loadDashboard() {
+      const refreshIcon = document.getElementById("refresh-icon");
+      refreshIcon.classList.add("spin-animation");
+
+      const [mtrData, lrtData] = await Promise.all([
+        fetchMTRData(),
+        fetchLRTData()
+      ]);
+
+      renderMTRSection(mtrData);
+      renderLRTSection(lrtData);
+
+      refreshIcon.classList.remove("spin-animation");
+    }
+
+    function renderMTRSection(data) {
+      const schedule = data?.data?.["TML-YUL"];
+      const downTrains = schedule?.DOWN || []; // Tuen Mun bound (上班)
+      const upTrains = schedule?.UP || [];     // Wu Kai Sha bound (下班)
+
+      document.getElementById("shangban-mtr").innerHTML = createMTRListHTML(downTrains);
+      document.getElementById("xiaban-mtr").innerHTML = createMTRListHTML(upTrains);
+    }
+
+    function createMTRListHTML(trainList) {
+      if (!trainList || trainList.length === 0) {
+        return `<div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-400 border border-slate-800">No scheduled trains available</div>`;
+      }
+
+      return trainList.map(train => {
+        const destName = DESTINATION_NAMES[train.dest] || train.dest;
+        const isArrivingStr = train.ttnt === "0" || train.ttnt === "1";
+        const timeDisplay = isArrivingStr ? "即將到達 Arriving" : `${train.ttnt} mins`;
+        const isUrgent = parseInt(train.ttnt) <= 3 || isArrivingStr;
+
+        return `
+          <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+                月台 Platform ${train.plat}
+              </span>
+              <span class="text-sm font-semibold text-slate-100">${destName}</span>
+            </div>
+            <span class="text-sm font-bold font-mono ${isUrgent ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}">
+              ${timeDisplay}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLRTSection(data) {
+      const platforms = data?.platform_list || [];
+      let allRoutes = [];
+
+      platforms.forEach(p => {
+        (p.route_list || []).forEach(r => {
+          allRoutes.push({ ...r, platform_id: p.platform_id });
+        });
+      });
+
+      const shangbanRoutes = allRoutes.filter(r => ["705", "706", "751"].includes(r.route_no));
+      const xiabanRoutes = allRoutes.filter(r => ["705", "706", "751P", "761P"].includes(r.route_no));
+
+      document.getElementById("shangban-lrt").innerHTML = createLRTListHTML(shangbanRoutes.length ? shangbanRoutes : allRoutes);
+      document.getElementById("xiaban-lrt").innerHTML = createLRTListHTML(xiabanRoutes.length ? xiabanRoutes : allRoutes);
+    }
+
+    function createLRTListHTML(routes) {
+      if (!routes || routes.length === 0) {
+        return `<div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-400 border border-slate-800">No scheduled Light Rail</div>`;
+      }
+
+      return routes.slice(0, 3).map(r => `
+        <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-colors">
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-black bg-slate-700 text-slate-100 px-2.5 py-1 rounded-lg">
+              ${r.route_no}
+            </span>
+            <span class="text-xs text-slate-400">月台 ${r.platform_id}</span>
+          </div>
+          <span class="text-sm font-semibold text-sky-400 font-mono">
+            ${r.time_ch || r.time_en}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function startTimer() {
+      clearInterval(countdownInterval);
+      timerSeconds = 20;
+      updateTimerUI();
+
+      countdownInterval = setInterval(() => {
+        timerSeconds--;
+        updateTimerUI();
+
+        if (timerSeconds <= 0) {
+          loadDashboard();
+          timerSeconds = 20;
+        }
+      }, 1000);
+    }
+
+    function updateTimerUI() {
+      document.getElementById("countdown").innerText = `${timerSeconds}s`;
+    }
+
+    function manualRefresh() {
+      loadDashboard();
+      startTimer();
+    }
+  </script>
+</body>
+</html>
