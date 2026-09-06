@@ -68,11 +68,11 @@
           </div>
         </div>
 
-        <!-- LRT Tin Shui Wai Stop (Optimized shorter route direction) -->
+        <!-- LRT Tin Shui Wai Stop (Filtered for Route 706) -->
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍站 Tin Shui Wai (LRT Stop 430)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">較少站數方向 (Shorter Route)</span>
+            <span class="text-slate-400 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded font-bold">706 循環線 (Shorter Loop)</span>
           </div>
           <div id="shangban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -90,11 +90,11 @@
           <span class="text-[11px] font-semibold bg-sky-950/60 text-sky-400 border border-sky-800/50 px-2.5 py-0.5 rounded-full">Inbound (DOWN)</span>
         </div>
 
-        <!-- LRT Chung Fu / Hospital (Optimized shorter route direction) -->
+        <!-- LRT Chung Fu / Hospital (Filtered for Route 705) -->
         <div class="space-y-2">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">頌富 Chung Fu / 醫院 (LRT Stop 468)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">較少站數方向 (Shorter Route)</span>
+            <span class="text-slate-400 bg-sky-950/80 text-sky-300 border border-sky-800/60 px-2 py-0.5 rounded font-bold">705 循環線 (Shorter Loop)</span>
           </div>
           <div id="xiaban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -120,14 +120,14 @@
     const MTR_YUL_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=YUL";
     const MTR_TIS_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=TIS";
     
-    // Using dir=1 for both or generalized fallback to fetch optimized station data streams
+    // Fetch all platforms for station 430 and 468
     const LRT_TSW_URLS = [
-      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430&dir=1",
-      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430&dir=1"
+      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430",
+      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430"
     ];
     const LRT_HOSP_URLS = [
-      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=468&dir=1",
-      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=468&dir=1"
+      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=468",
+      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=468"
     ];
 
     const DESTINATION_MAP = {
@@ -231,14 +231,16 @@
     }
 
     function renderLRT(tswData, hospData) {
-      const shangbanRoutes = parseLRT(tswData);
-      const xiabanRoutes = parseLRT(hospData);
+      // Filter Morning Commute (上班) specifically for Route 706
+      const shangbanRoutes = parseLRT(tswData, "706");
+      // Filter Evening Commute (下班) specifically for Route 705
+      const xiabanRoutes = parseLRT(hospData, "705");
 
-      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes);
-      document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes);
+      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, "706");
+      document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes, "705");
     }
 
-    function parseLRT(apiData) {
+    function parseLRT(apiData, targetRouteNo) {
       if (!apiData) return [];
       const platforms = apiData.platform_list || apiData.platform || [];
       if (!Array.isArray(platforms)) return [];
@@ -250,27 +252,32 @@
 
         if (Array.isArray(list)) {
           list.forEach(r => {
-            routes.push({
-              platform: pId,
-              routeNo: r.route_no || r.route_number || 'N/A',
-              dest: r.dest_ch || r.dest_en || 'Special',
-              time: r.time_ch || r.time_en || 'Arriving'
-            });
+            const routeNo = String(r.route_no || r.route_number || '');
+            
+            // If targetRouteNo is specified, only retain matching routes
+            if (!targetRouteNo || routeNo === targetRouteNo) {
+              routes.push({
+                platform: pId,
+                routeNo: routeNo || 'N/A',
+                dest: r.dest_ch || r.dest_en || 'Special',
+                time: r.time_ch || r.time_en || 'Arriving'
+              });
+            }
           });
         }
       });
       return routes;
     }
 
-    function renderLRTRows(routes) {
+    function renderLRTRows(routes, routeNo) {
       if (!routes || routes.length === 0) {
-        return `<div class="p-2.5 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800">No active Light Rail departures</div>`;
+        return `<div class="p-2.5 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800">No active Route ${routeNo} departures currently</div>`;
       }
 
       return routes.slice(0, 4).map(r => `
         <div class="flex justify-between items-center bg-slate-900/90 px-3.5 py-2.5 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
           <div class="flex items-center gap-2.5">
-            <span class="text-xs font-bold bg-slate-800 text-slate-200 px-2 py-0.5 rounded-md min-w-[40px] text-center">
+            <span class="text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-md min-w-[40px] text-center">
               ${r.routeNo}
             </span>
             <span class="text-xs font-medium text-slate-300">${r.dest}</span>
