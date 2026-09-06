@@ -53,24 +53,13 @@
             </div>
           </div>
 
-          <!-- LRT Tin Shui Wai Box: Route 706 -->
+          <!-- Combined LRT Tin Shui Wai Box -->
           <div class="border-2 border-black p-3 bg-white">
             <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
-              <span class="text-xl sm:text-2xl font-black text-black">輕鐵天水圍站 (706)</span>
-              <span class="text-sm font-bold text-black">循環綫</span>
+              <span class="text-xl sm:text-2xl font-black text-black">輕鐵天水圍站</span>
+              <span class="text-sm font-bold text-black">706 / 751 (往天逸)</span>
             </div>
-            <div id="shangban-lrt-706" class="divide-y border-dashed border-gray-400">
-              <div class="py-2 text-sm font-bold animate-pulse text-black">載入中...</div>
-            </div>
-          </div>
-
-          <!-- LRT Tin Shui Wai Box: Route 751 (往天逸) -->
-          <div class="border-2 border-black p-3 bg-white">
-            <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
-              <span class="text-xl sm:text-2xl font-black text-black">輕鐵天水圍站 (751)</span>
-              <span class="text-sm font-bold text-black">往 天逸</span>
-            </div>
-            <div id="shangban-lrt-751" class="divide-y border-dashed border-gray-400">
+            <div id="shangban-lrt" class="divide-y border-dashed border-gray-400">
               <div class="py-2 text-sm font-bold animate-pulse text-black">載入中...</div>
             </div>
           </div>
@@ -227,17 +216,17 @@
     }
 
     function renderLRT(tswData, tinShuiData) {
-      // Filter 2 departures specifically for Route 706
-      const routes706 = parseLRT(tswData, (routeNo) => routeNo === "706");
-
-      // Filter 2 departures specifically for Route 751 bound for 天逸
-      const routes751 = parseLRT(tswData, (routeNo, dest) => routeNo === "751" && dest.includes("天逸"));
+      // Combined filtering for Morning Commute (Route 706 OR Route 751 bound for 天逸)
+      const shangbanRoutes = parseLRT(tswData, (routeNo, dest) => {
+        if (routeNo === "706") return true;
+        if (routeNo === "751" && dest.includes("天逸")) return true;
+        return false;
+      });
 
       // Filter departures for Evening Route 705 from Tin Shui Stop
       const xiabanRoutes = parseLRT(tinShuiData, (routeNo) => routeNo === "705");
 
-      document.getElementById("shangban-lrt-706").innerHTML = renderLRTRows(routes706, 2);
-      document.getElementById("shangban-lrt-751").innerHTML = renderLRTRows(routes751, 2);
+      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, 3);
       document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes, 3);
     }
 
@@ -270,7 +259,7 @@
       return routes;
     }
 
-    function renderLRTRows(routes, limit = 2) {
+    function renderLRTRows(routes, limit = 3) {
       if (!routes || routes.length === 0) {
         return `<div class="py-2 text-sm font-bold text-gray-500">暫無班次資料</div>`;
       }
