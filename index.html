@@ -5,110 +5,96 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MTR & Light Rail Live Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .spin-animation {
-      animation: spin 0.8s linear infinite;
-    }
-  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-sans antialiased">
+<body class="bg-white text-black min-h-screen p-3 sm:p-5 font-sans antialiased">
 
-  <div class="max-w-5xl mx-auto space-y-5">
+  <div class="max-w-xl mx-auto space-y-4">
     
     <!-- Top Header Bar -->
-    <header class="flex flex-row justify-between items-center bg-slate-900/95 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl backdrop-blur-md">
-      <div class="flex items-center gap-3.5">
-        <div class="w-3 h-10 bg-amber-500 rounded-full"></div>
+    <header class="border-b-2 border-black pb-3">
+      <div class="flex justify-between items-start">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">MTR Commute Live</h1>
-          <p class="text-xs sm:text-sm text-slate-300 font-medium">Yuen Long & Tin Shui Wai Hub</p>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-black uppercase">
+            MTR Commute Dashboard
+          </h1>
+          <div class="flex items-center gap-3 text-sm font-bold text-black mt-1">
+            <span id="current-time">18:25:31</span>
+            <span>•</span>
+            <span>刷新倒數: <span id="countdown">20</span>s</span>
+          </div>
         </div>
-      </div>
 
-      <div class="flex items-center gap-3 sm:gap-4">
-        <div class="text-right hidden sm:block">
-          <span class="text-xs uppercase tracking-wider text-slate-400 font-bold block">Auto Refresh</span>
-          <span id="countdown" class="text-lg font-mono font-bold text-amber-400">20s</span>
-        </div>
-        
-        <button id="refresh-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-3 sm:px-5 rounded-xl transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-amber-500/20 text-sm sm:text-base">
-          <svg id="refresh-icon" class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          <span>Refresh</span>
+        <button id="refresh-btn" class="border-2 border-black px-3 py-1.5 font-black text-center text-xs sm:text-sm active:bg-black active:text-white transition-colors">
+          刷新<br/><span class="text-[9px] tracking-widest">REFRESH</span>
         </button>
       </div>
     </header>
 
-    <!-- Main Grid -->
-    <main class="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+    <!-- Main Content Container -->
+    <main class="space-y-6">
       
-      <!-- Section: 上班 Morning Commute -->
-      <section class="bg-slate-900/70 border border-slate-800/90 rounded-2xl p-4 sm:p-6 space-y-5 shadow-2xl backdrop-blur-sm">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-3.5">
-          <div class="flex items-center gap-2.5">
-            <span class="w-3.5 h-3.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <h2 class="text-2xl sm:text-3xl font-black text-emerald-400 tracking-wide">上班 <span class="text-sm font-semibold text-slate-300 ml-1">Morning</span></h2>
-          </div>
-          <span class="text-xs sm:text-sm font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 px-3 py-1 rounded-full">Outbound (UP)</span>
+      <!-- Section 1: 上班 Morning Commute -->
+      <section>
+        <div class="flex items-center gap-2 border-l-[6px] border-black pl-2.5 mb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-black">
+            上班 <span class="text-base font-bold">Morning Commute</span>
+          </h2>
         </div>
 
-        <!-- MTR Yuen Long -> Tin Shui Wai / Tuen Mun (UP Direction) -->
-        <div class="space-y-2.5">
-          <div class="flex justify-between items-center text-xs sm:text-sm">
-            <span class="font-bold text-slate-100 text-base sm:text-lg">元朗 Yuen Long (TML)</span>
-            <span class="text-slate-300 bg-slate-800/90 px-2.5 py-1 rounded-md font-semibold">往 天水圍 / 屯門</span>
+        <div class="space-y-3">
+          <!-- MTR Yuen Long Box -->
+          <div class="border-2 border-black p-3 bg-white">
+            <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
+              <span class="text-2xl font-black text-black">屯馬綫</span>
+              <span class="text-sm sm:text-base font-bold text-black">往 屯門 / 天水圍</span>
+            </div>
+            <div id="shangban-mtr" class="divide-y border-dashed border-gray-400">
+              <div class="py-2 text-sm font-bold animate-pulse text-black">載入中...</div>
+            </div>
           </div>
-          <div id="shangban-mtr" class="space-y-2">
-            <div class="p-4 bg-slate-900/50 rounded-xl text-sm text-slate-400 border border-slate-800 animate-pulse">Loading train schedules...</div>
-          </div>
-        </div>
 
-        <!-- LRT Tin Shui Wai Stop (Filtered for 706 & 751往天逸) -->
-        <div class="space-y-2.5 pt-3 border-t border-slate-800/70">
-          <div class="flex justify-between items-center text-xs sm:text-sm">
-            <span class="font-bold text-slate-100 text-base sm:text-lg">天水圍站 Tin Shui Wai (430)</span>
-            <span class="bg-emerald-950 text-emerald-300 border border-emerald-700/80 px-2.5 py-1 rounded-md font-bold">706 / 751 (往天逸)</span>
-          </div>
-          <div id="shangban-lrt" class="space-y-2">
-            <div class="p-4 bg-slate-900/50 rounded-xl text-sm text-slate-400 border border-slate-800 animate-pulse">Loading Light Rail schedules...</div>
+          <!-- LRT Tin Shui Wai Box -->
+          <div class="border-2 border-black p-3 bg-white">
+            <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
+              <span class="text-xl sm:text-2xl font-black text-black">輕鐵天水圍站</span>
+              <span class="text-sm font-bold text-black">706 / 751 (往天逸)</span>
+            </div>
+            <div id="shangban-lrt" class="divide-y border-dashed border-gray-400">
+              <div class="py-2 text-sm font-bold animate-pulse text-black">載入中...</div>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- Section: 下班 Evening Commute -->
-      <section class="bg-slate-900/70 border border-slate-800/90 rounded-2xl p-4 sm:p-6 space-y-5 shadow-2xl backdrop-blur-sm">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-3.5">
-          <div class="flex items-center gap-2.5">
-            <span class="w-3.5 h-3.5 rounded-full bg-sky-400 animate-pulse"></span>
-            <h2 class="text-2xl sm:text-3xl font-black text-sky-400 tracking-wide">下班 <span class="text-sm font-semibold text-slate-300 ml-1">Evening</span></h2>
-          </div>
-          <span class="text-xs sm:text-sm font-bold bg-sky-950/80 text-sky-300 border border-sky-700/60 px-3 py-1 rounded-full">Inbound (DOWN)</span>
+      <!-- Section 2: 下班 Evening Commute -->
+      <section>
+        <div class="flex items-center gap-2 border-l-[6px] border-black pl-2.5 mb-3">
+          <h2 class="text-xl sm:text-2xl font-black text-black">
+            下班 <span class="text-base font-bold">Evening Return</span>
+          </h2>
         </div>
 
-        <!-- LRT Chung Fu / Hospital (Filtered for Route 705) -->
-        <div class="space-y-2.5">
-          <div class="flex justify-between items-center text-xs sm:text-sm">
-            <span class="font-bold text-slate-100 text-base sm:text-lg">頌富 Chung Fu / 醫院 (468)</span>
-            <span class="bg-sky-950 text-sky-300 border border-sky-700/80 px-2.5 py-1 rounded-md font-bold">705 循環線</span>
+        <div class="space-y-3">
+          <!-- LRT Chung Fu / Hospital Box -->
+          <div class="border-2 border-black p-3 bg-white">
+            <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
+              <span class="text-xl sm:text-2xl font-black text-black">頌富 / 醫院</span>
+              <span class="text-sm font-bold text-black">705 循環綫</span>
+            </div>
+            <div id="xiaban-lrt" class="divide-y border-dashed border-gray-400">
+              <div class="py-2 text-sm font-bold animate-pulse text-black">載入中...</div>
+            </div>
           </div>
-          <div id="xiaban-lrt" class="space-y-2">
-            <div class="p-4 bg-slate-900/50 rounded-xl text-sm text-slate-400 border border-slate-800 animate-pulse">Loading Light Rail schedules...</div>
-          </div>
-        </div>
 
-        <!-- MTR Tin Shui Wai -> Yuen Long / Wu Kai Sha (DOWN Direction) -->
-        <div class="space-y-2.5 pt-3 border-t border-slate-800/70">
-          <div class="flex justify-between items-center text-xs sm:text-sm">
-            <span class="font-bold text-slate-100 text-base sm:text-lg">天水圍 Tin Shui Wai (TML)</span>
-            <span class="text-slate-300 bg-slate-800/90 px-2.5 py-1 rounded-md font-semibold">往 元朗 / 烏溪沙</span>
-          </div>
-          <div id="xiaban-mtr" class="space-y-2">
-            <div class="p-4 bg-slate-900/50 rounded-xl text-sm text-slate-400 border border-slate-800 animate-pulse">Loading train schedules...</div>
+          <!-- MTR Tin Shui Wai Box -->
+          <div class="border-2 border-black p-3 bg-white">
+            <div class="flex justify-between items-baseline border-b-2 border-black pb-1.5 mb-2">
+              <span class="text-2xl font-black text-black">屯馬綫</span>
+              <span class="text-sm sm:text-base font-bold text-black">往 元朗 / 烏溪沙</span>
+            </div>
+            <div id="xiaban-mtr" class="divide-y border-dashed border-gray-400">
+              <div class="py-2 text-sm font-bold animate-pulse text-black">載入中...</div>
+            </div>
           </div>
         </div>
       </section>
@@ -130,12 +116,12 @@
     ];
 
     const DESTINATION_MAP = {
-      "TUM": "屯門 Tuen Mun",
-      "WKS": "烏溪沙 Wu Kai Sha",
-      "HUH": "紅磡 Hung Hom",
-      "KSR": "錦上路 Kam Sheung Road",
-      "YUL": "元朗 Yuen Long",
-      "TIS": "天水圍 Tin Shui Wai"
+      "TUM": "屯門",
+      "WKS": "烏溪沙",
+      "HUH": "紅磡",
+      "KSR": "錦上路",
+      "YUL": "元朗",
+      "TIS": "天水圍"
     };
 
     let timerSeconds = 20;
@@ -143,9 +129,18 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("refresh-btn").addEventListener("click", manualRefresh);
+      startClock();
       loadDashboard();
       startTimer();
     });
+
+    function startClock() {
+      setInterval(() => {
+        const now = new Date();
+        const timeStr = now.toTimeString().split(' ')[0];
+        document.getElementById("current-time").innerText = timeStr;
+      }, 1000);
+    }
 
     async function fetchJsonWithFallback(url) {
       try {
@@ -175,9 +170,6 @@
     }
 
     async function loadDashboard() {
-      const refreshIcon = document.getElementById("refresh-icon");
-      refreshIcon.classList.add("spin-animation");
-
       const [mtrYulData, mtrTisData, lrtTswData, lrtHospData] = await Promise.all([
         fetchJsonWithFallback(MTR_YUL_API),
         fetchJsonWithFallback(MTR_TIS_API),
@@ -187,8 +179,6 @@
 
       renderMTR(mtrYulData, mtrTisData);
       renderLRT(lrtTswData, lrtHospData);
-
-      refreshIcon.classList.remove("spin-animation");
     }
 
     function renderMTR(yulData, tisData) {
@@ -204,44 +194,39 @@
 
     function renderMTRRows(trainList) {
       if (!trainList || trainList.length === 0) {
-        return `<div class="p-3.5 bg-slate-900/50 rounded-xl text-sm text-slate-400 border border-slate-800">No scheduled departures</div>`;
+        return `<div class="py-2 text-sm font-bold text-gray-500">暫無班次資料</div>`;
       }
 
-      return trainList.slice(0, 4).map(train => {
-        const destName = DESTINATION_MAP[train.dest] || train.dest_ch || train.dest;
+      return trainList.slice(0, 3).map(train => {
         const isArriving = train.ttnt === "0" || train.ttnt === "1";
-        const timeText = isArriving ? "即將到達 Arriving" : `${train.ttnt} mins`;
-        const isUrgent = parseInt(train.ttnt) <= 3 || isArriving;
+        const minText = isArriving ? "即將" : `${train.ttnt} min`;
+        const clockTime = train.time ? train.time.substring(11, 16) : "--:--";
 
         return `
-          <div class="flex justify-between items-center bg-slate-900/90 px-4 py-3 rounded-xl border border-slate-800/90 hover:border-slate-700 transition-colors">
-            <div class="flex items-center gap-3">
-              <span class="text-xs sm:text-sm font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg">
-                月台 ${train.plat || '1'}
-              </span>
-              <span class="text-sm sm:text-base font-bold text-slate-100">${destName}</span>
+          <div class="flex justify-between items-center py-2 border-b border-dashed border-gray-400 last:border-b-0 text-lg font-black text-black">
+            <div>
+              <span>${clockTime}</span>
+              <span class="text-sm font-bold ml-1.5">(月台 ${train.plat || '1'})</span>
             </div>
-            <span class="text-sm sm:text-base font-black font-mono ${isUrgent ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}">
-              ${timeText}
-            </span>
+            <span class="text-xl font-black">${minText}</span>
           </div>
         `;
       }).join('');
     }
 
     function renderLRT(tswData, hospData) {
-      // Morning Commute: Filter for Route 706 OR Route 751 bound specifically for 天逸 (Tin Yat)
+      // Morning Commute: Route 706 OR Route 751 bound for 天逸
       const shangbanRoutes = parseLRT(tswData, (routeNo, dest) => {
         if (routeNo === "706") return true;
         if (routeNo === "751" && dest.includes("天逸")) return true;
         return false;
       });
 
-      // Evening Commute: Filter for Route 705
+      // Evening Commute: Route 705
       const xiabanRoutes = parseLRT(hospData, (routeNo) => routeNo === "705");
 
-      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, "706 / 751 (天逸)");
-      document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes, "705");
+      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes);
+      document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes);
     }
 
     function parseLRT(apiData, filterFn) {
@@ -273,25 +258,18 @@
       return routes;
     }
 
-    function renderLRTRows(routes, routeLabel) {
+    function renderLRTRows(routes) {
       if (!routes || routes.length === 0) {
-        return `<div class="p-3.5 bg-slate-900/50 rounded-xl text-sm text-slate-400 border border-slate-800">No active Route ${routeLabel} departures currently</div>`;
+        return `<div class="py-2 text-sm font-bold text-gray-500">暫無班次資料</div>`;
       }
 
-      return routes.slice(0, 4).map(r => `
-        <div class="flex justify-between items-center bg-slate-900/90 px-4 py-3 rounded-xl border border-slate-800/90 hover:border-slate-700 transition-colors">
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-black bg-amber-500/25 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg min-w-[48px] text-center">
-              ${r.routeNo}
-            </span>
-            <div class="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
-              <span class="text-sm sm:text-base font-bold text-slate-100">${r.dest}</span>
-              <span class="text-xs text-slate-400 font-medium">月台 ${r.platform}</span>
-            </div>
+      return routes.slice(0, 3).map(r => `
+        <div class="flex justify-between items-center py-2 border-b border-dashed border-gray-400 last:border-b-0 text-lg font-black text-black">
+          <div>
+            <span class="bg-black text-white px-1.5 py-0.5 text-sm mr-1.5 font-bold">${r.routeNo}</span>
+            <span class="text-sm font-bold">(月台 ${r.platform})</span>
           </div>
-          <span class="text-sm sm:text-base font-black text-sky-400 font-mono">
-            ${r.time}
-          </span>
+          <span class="text-lg font-black">${r.time}</span>
         </div>
       `).join('');
     }
@@ -313,7 +291,7 @@
     }
 
     function updateTimerUI() {
-      document.getElementById("countdown").innerText = `${timerSeconds}s`;
+      document.getElementById("countdown").innerText = timerSeconds;
     }
 
     function manualRefresh() {
