@@ -68,11 +68,11 @@
           </div>
         </div>
 
-        <!-- LRT Tin Shui Wai Stop (Filtered for Routes 706 & 751) -->
+        <!-- LRT Tin Shui Wai Stop (Filtered for 706 & 751往天逸) -->
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍站 Tin Shui Wai (LRT Stop 430)</span>
-            <span class="text-slate-400 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded font-bold">706 / 751 綫 (Shorter Routes)</span>
+            <span class="text-slate-400 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded font-bold">706 / 751 (往天逸)</span>
           </div>
           <div id="shangban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -231,16 +231,21 @@
     }
 
     function renderLRT(tswData, hospData) {
-      // Morning Commute: Filter for Route 706 AND Route 751
-      const shangbanRoutes = parseLRT(tswData, ["706", "751"]);
-      // Evening Commute: Filter for Route 705
-      const xiabanRoutes = parseLRT(hospData, ["705"]);
+      // Morning Commute: Filter for Route 706 OR Route 751 bound specifically for 天逸 (Tin Yat)
+      const shangbanRoutes = parseLRT(tswData, (routeNo, dest) => {
+        if (routeNo === "706") return true;
+        if (routeNo === "751" && dest.includes("天逸")) return true;
+        return false;
+      });
 
-      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, "706 / 751");
+      // Evening Commute: Filter for Route 705
+      const xiabanRoutes = parseLRT(hospData, (routeNo) => routeNo === "705");
+
+      document.getElementById("shangban-lrt").innerHTML = renderLRTRows(shangbanRoutes, "706 / 751 (天逸)");
       document.getElementById("xiaban-lrt").innerHTML = renderLRTRows(xiabanRoutes, "705");
     }
 
-    function parseLRT(apiData, allowedRoutes) {
+    function parseLRT(apiData, filterFn) {
       if (!apiData) return [];
       const platforms = apiData.platform_list || apiData.platform || [];
       if (!Array.isArray(platforms)) return [];
@@ -253,13 +258,14 @@
         if (Array.isArray(list)) {
           list.forEach(r => {
             const routeNo = String(r.route_no || r.route_number || '');
+            const dest = String(r.dest_ch || r.dest_en || 'Special');
             
-            // Check if current route is in the allowed routes array
-            if (!allowedRoutes || allowedRoutes.includes(routeNo)) {
+            // Check if route satisfies filter conditions
+            if (!filterFn || filterFn(routeNo, dest)) {
               routes.push({
                 platform: pId,
                 routeNo: routeNo || 'N/A',
-                dest: r.dest_ch || r.dest_en || 'Special',
+                dest: dest,
                 time: r.time_ch || r.time_en || 'Arriving'
               });
             }
