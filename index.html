@@ -57,11 +57,11 @@
           <span class="text-[11px] font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2.5 py-0.5 rounded-full">Outbound</span>
         </div>
 
-        <!-- MTR Yuen Long -> Tuen Mun Direction -->
+        <!-- MTR Yuen Long -> Tin Shui Wai Direction -->
         <div class="space-y-2">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">元朗 Yuen Long (TML)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 屯門 Tuen Mun</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 天水圍 Tin Shui Wai</span>
           </div>
           <div id="shangban-mtr" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading train schedules...</div>
@@ -101,11 +101,11 @@
           </div>
         </div>
 
-        <!-- MTR Tin Shui Wai -> Wu Kai Sha Direction -->
+        <!-- MTR Tin Shui Wai -> Yuen Long Direction -->
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍 Tin Shui Wai (TML)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 烏溪沙 Wu Kai Sha</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 元朗 Yuen Long</span>
           </div>
           <div id="xiaban-mtr" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading train schedules...</div>
@@ -147,7 +147,6 @@
       startTimer();
     });
 
-    // Helper: Fetch JSON with CORS proxy fallback if blocked locally
     async function fetchJsonWithFallback(url) {
       try {
         const res = await fetch(url);
@@ -193,23 +192,13 @@
     }
 
     function renderMTR(yulData, tisData) {
-      // Yuen Long station (TML): DOWN direction goes towards Tuen Mun (TUM)
+      // Legend 1 (上班): Yuen Long station -> DOWN direction (passes through Tin Shui Wai towards Tuen Mun)
       const yulObj = yulData?.data?.["TML-YUL"] || {};
       let shangbanTrains = yulObj.DOWN || [];
-      
-      // Fallback: if DOWN is empty, look through all schedules for TUM destination
-      if (shangbanTrains.length === 0 && (yulObj.UP || []).length > 0) {
-        shangbanTrains = (yulObj.UP || []).filter(t => t.dest === "TUM" || t.dest_ch === "屯門");
-      }
 
-      // Tin Shui Wai station (TML): UP direction goes towards Wu Kai Sha (WKS)
+      // Legend 2 (下班): Tin Shui Wai station -> UP direction (passes through Yuen Long towards Wu Kai Sha)
       const tisObj = tisData?.data?.["TML-TIS"] || {};
       let xiabanTrains = tisObj.UP || [];
-
-      // Fallback: if UP is empty, look through DOWN for WKS destination
-      if (xiabanTrains.length === 0 && (tisObj.DOWN || []).length > 0) {
-        xiabanTrains = (tisObj.DOWN || []).filter(t => t.dest === "WKS" || t.dest_ch === "烏溪沙");
-      }
 
       document.getElementById("shangban-mtr").innerHTML = renderMTRRows(shangbanTrains);
       document.getElementById("xiaban-mtr").innerHTML = renderMTRRows(xiabanTrains);
