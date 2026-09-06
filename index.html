@@ -114,13 +114,17 @@
   </div>
 
   <script>
-    // APIs setup
+    // MTR TML endpoints
     const MTR_YUL_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=YUL";
     const MTR_TIS_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=TIS";
     
-    // Valid Light Rail Stop IDs: 430 = Tin Shui Wai Stop, 468 = Chung Fu Stop (Closest Light Rail to Tin Shui Wai Hospital)
-    const LRT_TSW_API = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule.php?station_id=430";
-    const LRT_HOSP_API = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule.php?station_id=468";
+    // Official Light Rail Endpoints (Using /lrnt/getSchedule instead of getSchedule.php)
+    const LRT_TSW_PRIMARY = "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430";
+    const LRT_HOSP_PRIMARY = "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=468";
+    
+    // Secondary fallback URL format
+    const LRT_TSW_FALLBACK = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430";
+    const LRT_HOSP_FALLBACK = "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=468";
 
     const DESTINATION_NAMES = {
       "TUM": "屯門 Tuen Mun",
@@ -142,12 +146,20 @@
     async function fetchApi(url) {
       try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error("API network error");
+        if (!res.ok) throw new Error("Network error");
         return await res.json();
       } catch (err) {
         console.error("Fetch Error:", url, err);
         return null;
       }
+    }
+
+    async function fetchLrtApi(primaryUrl, fallbackUrl) {
+      let data = await fetchApi(primaryUrl);
+      if (!data || (!data.platform_list && !data.platform)) {
+        data = await fetchApi(fallbackUrl);
+      }
+      return data;
     }
 
     async function loadDashboard() {
@@ -157,8 +169,8 @@
       const [mtrYulData, mtrTisData, lrtTswData, lrtHospData] = await Promise.all([
         fetchApi(MTR_YUL_API),
         fetchApi(MTR_TIS_API),
-        fetchApi(LRT_TSW_API),
-        fetchApi(LRT_HOSP_API)
+        fetchLrtApi(LRT_TSW_PRIMARY, LRT_TSW_FALLBACK),
+        fetchLrtApi(LRT_HOSP_PRIMARY, LRT_HOSP_FALLBACK)
       ]);
 
       renderMTRSection(mtrYulData, mtrTisData);
@@ -168,10 +180,7 @@
     }
 
     function renderMTRSection(yulData, tisData) {
-      // 上班: Yuen Long -> Tuen Mun (DOWN direction)
       const shangbanTrains = yulData?.data?.["TML-YUL"]?.DOWN || [];
-      
-      // 下班: Tin Shui Wai -> Yuen Long / Wu Kai Sha (UP direction)
       const xiabanTrains = tisData?.data?.["TML-TIS"]?.UP || [];
 
       document.getElementById("shangban-mtr").innerHTML = createMTRListHTML(shangbanTrains);
@@ -214,24 +223,27 @@
     }
 
     function parseLRTData(apiData) {
-      if (!apiData || !apiData.platform_list || !Array.isArray(apiData.platform_list)) {
-        return [];
-      }
+      if (!apiData) return [];
+      
+      const platforms = apiData.platform_list || apiData.platform || [];
+      if (!Array.isArray(platforms)) return [];
 
       let extractedRoutes = [];
-      apiData.platform_list.forEach(platform => {
-        const platformId = platform.platform_id;
-        const routeList = platform.route_list || [];
+      platforms.forEach(platform => {
+        const platformId = platform.platform_id || platform.id || 'N/A';
+        const routeList = platform.route_list || platform.route || [];
 
-        routeList.forEach(route => {
-          extractedRoutes.push({
-            platform_id: platformId,
-            route_no: route.route_no || 'N/A',
-            dest_ch: route.dest_ch || route.dest_en || 'Special',
-            dest_en: route.dest_en || '',
-            time_ch: route.time_ch || route.time_en || 'Arriving'
+        if (Array.isArray(routeList)) {
+          routeList.forEach(route => {
+            extractedRoutes.push({
+              platform_id: platformId,
+              route_no: route.route_no || route.route_number || 'N/A',
+              dest_ch: route.dest_ch || route.dest_en || 'Special',
+              dest_en: route.dest_en || '',
+              time_ch: route.time_ch || route.time_en || 'Arriving'
+            });
           });
-        });
+        }
       });
 
       return extractedRoutes;
