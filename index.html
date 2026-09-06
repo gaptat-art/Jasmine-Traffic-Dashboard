@@ -68,11 +68,11 @@
           </div>
         </div>
 
-        <!-- LRT Tin Shui Wai Stop (dir=1) -->
+        <!-- LRT Tin Shui Wai Stop (Optimized shorter route direction) -->
         <div class="space-y-2 pt-2 border-t border-slate-800/50">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">天水圍站 Tin Shui Wai (LRT Stop 430)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 醫院/天逸 Direction (dir=1)</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">較少站數方向 (Shorter Route)</span>
           </div>
           <div id="shangban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -90,11 +90,11 @@
           <span class="text-[11px] font-semibold bg-sky-950/60 text-sky-400 border border-sky-800/50 px-2.5 py-0.5 rounded-full">Inbound (DOWN)</span>
         </div>
 
-        <!-- LRT Chung Fu / Hospital (dir=2) -->
+        <!-- LRT Chung Fu / Hospital (Optimized shorter route direction) -->
         <div class="space-y-2">
           <div class="flex justify-between items-center text-xs">
             <span class="font-bold text-slate-200">頌富 Chung Fu / 醫院 (LRT Stop 468)</span>
-            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">往 天水圍站 Direction (dir=2)</span>
+            <span class="text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded font-medium">較少站數方向 (Shorter Route)</span>
           </div>
           <div id="xiaban-lrt" class="space-y-1.5">
             <div class="p-3 bg-slate-900/40 rounded-xl text-xs text-slate-500 border border-slate-800/60 animate-pulse">Loading Light Rail schedules...</div>
@@ -120,14 +120,14 @@
     const MTR_YUL_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=YUL";
     const MTR_TIS_API = "https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=TIS";
     
-    // Reverted dir parameters: dir=1 for 上班, dir=2 for 下班
+    // Using dir=1 for both or generalized fallback to fetch optimized station data streams
     const LRT_TSW_URLS = [
       "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=430&dir=1",
       "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=430&dir=1"
     ];
     const LRT_HOSP_URLS = [
-      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=468&dir=2",
-      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=468&dir=2"
+      "https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=468&dir=1",
+      "https://rt.data.gov.hk/v1/transport/mtr/lrnt/getSchedule?station_id=468&dir=1"
     ];
 
     const DESTINATION_MAP = {
